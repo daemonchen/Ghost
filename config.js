@@ -37,7 +37,7 @@ config = {
         },
         server: {
             // Host to be passed to node's `net.Server#listen()`
-            host: 'www.classical1988.com',
+            host: 'localhost',
             // Port to be passed tos node's `net.Server#listen()`, for iisnode set this to `process.env.PORT`
             port: '8080'
         },
