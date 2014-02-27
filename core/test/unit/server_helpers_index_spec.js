@@ -471,7 +471,7 @@ describe('Core Helpers', function () {
             });
         });
     });
-    
+
     describe('Page Url Helper', function () {
         it('has loaded page_url helper', function () {
             should.exist(handlebars.helpers.page_url);

@@ -27,9 +27,14 @@ config = {
         // ```
 
         database: {
-            client: 'sqlite3',
+            client: 'mysql',
             connection: {
-                filename: path.join(__dirname, '/content/data/ghost-dev.db')
+              host: '192.168.27.110',
+              user: 'root',
+              password: '123456',
+              database : 'ghost',
+              charset  : 'utf8'
+                // filename: path.join(__dirname, '/content/data/ghost-dev.db')
             },
             debug: false
         },
