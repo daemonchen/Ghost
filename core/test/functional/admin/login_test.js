@@ -113,7 +113,7 @@ CasperTest.begin("Login limit is in place", 3, function suite(test) {
 }, true);
 
 CasperTest.begin("Can login to Ghost", 4, function suite(test) {
-    casper.thenOpen(url + "ghost/login/", function testTitle() {
+    casper.thenOpen(url + "ghost/signin/", function testTitle() {
         test.assertTitle("Ghost Admin", "Ghost admin has no title");
     });
 
@@ -129,4 +129,25 @@ CasperTest.begin("Can login to Ghost", 4, function suite(test) {
     }, function onTimeOut() {
         test.fail('Failed to load ghost/ resource');
     });
+}, true);
+
+CasperTest.begin('Ensure email field form validation', 1, function suite(test) {
+    casper.thenOpen(url + 'ghost/signin/');
+
+    casper.waitForOpaque(".js-login-box",
+        function then() {
+            this.fill("form.login-form", {
+                'email': 'notanemail'
+            }, true);
+        },
+        function onTimeout() {
+            test.fail('Login form didn\'t fade in.');
+        });
+
+    casper.waitForSelectorTextChange('.notification-error', function onSuccess() {
+        test.assertSelectorHasText('.notification-error', 'Invalid Email');
+    }, function onTimeout() {
+        test.fail('Email validation error did not appear');
+    }, 2000);
+
 }, true);

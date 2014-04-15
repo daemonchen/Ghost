@@ -3,12 +3,14 @@ var _              = require('lodash'),
     when           = require('when'),
     errors         = require('../errorHandling'),
     Showdown       = require('showdown'),
-    github         = require('../../shared/vendor/showdown/extensions/github'),
-    converter      = new Showdown.converter({extensions: [github]}),
+    ghostgfm       = require('../../shared/lib/showdown/extensions/ghostgfm'),
+    converter      = new Showdown.converter({extensions: [ghostgfm]}),
     User           = require('./user').User,
     Tag            = require('./tag').Tag,
     Tags           = require('./tag').Tags,
     ghostBookshelf = require('./base'),
+    validation     = require('../data/validation'),
+    xmlrpc         = require('../xmlrpc'),
 
     Post,
     Posts;
@@ -27,7 +29,12 @@ Post = ghostBookshelf.Model.extend({
     initialize: function () {
         var self = this;
         this.on('creating', this.creating, this);
-        this.on('saved', this.updateTags, this);
+        this.on('saved', function (model, attributes, options) {
+            if (model.get('status') === 'published') {
+                xmlrpc.ping(model.attributes);
+            }
+            return self.updateTags(model, attributes, options);
+        });
         this.on('saving', function (model, attributes, options) {
             return when(self.saving(model, attributes, options)).then(function () {
                 return self.validate(model, attributes, options);
@@ -36,20 +43,26 @@ Post = ghostBookshelf.Model.extend({
     },
 
     validate: function () {
-        ghostBookshelf.validator.check(this.get('title'), "Post title cannot be blank").notEmpty();
-        ghostBookshelf.validator.check(this.get('title'), 'Post title maximum length is 150 characters.').len(0, 150);
-        ghostBookshelf.validator.check(this.get('slug'), "Post title cannot be blank").notEmpty();
-        ghostBookshelf.validator.check(this.get('slug'), 'Post title maximum length is 150 characters.').len(0, 150);
-
-        return true;
+        validation.validateSchema(this.tableName, this.toJSON());
     },
 
     saving: function (newPage, attr, options) {
-        /*jslint unparam:true*/
-        var self = this;
+        /*jshint unused:false*/
+        var self = this,
+            tagsToCheck,
+            i;
 
-        // keep tags for 'saved' event
-        this.myTags = this.get('tags');
+        // keep tags for 'saved' event and deduplicate upper/lowercase tags
+        tagsToCheck = this.get('tags');
+        this.myTags = [];
+        _.each(tagsToCheck, function (item) {
+            for (i = 0; i < self.myTags.length; i = i + 1) {
+                if (self.myTags[i].name.toLocaleLowerCase() === item.name.toLocaleLowerCase()) {
+                    return;
+                }
+            }
+            self.myTags.push(item);
+        });
 
         ghostBookshelf.Model.prototype.saving.call(this);
 
@@ -79,7 +92,7 @@ Post = ghostBookshelf.Model.extend({
     },
 
     creating: function (newPage, attr, options) {
-        /*jslint unparam:true*/
+        /*jshint unused:false*/
 
         // set any dynamic default properties
         if (!this.get('author_id')) {
@@ -90,7 +103,7 @@ Post = ghostBookshelf.Model.extend({
     },
 
     updateTags: function (newPost, attr, options) {
-        /*jslint unparam:true*/
+        /*jshint unused:false*/
         var self = this;
         options = options || {};
 

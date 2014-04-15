@@ -4,7 +4,6 @@
 var _             = require('lodash'),
     when          = require('when'),
     config        = require('../config'),
-    errors        = require('../errorHandling'),
     db            = require('./db'),
     settings      = require('./settings'),
     notifications = require('./notifications'),
@@ -27,9 +26,9 @@ function cacheInvalidationHeader(req, result) {
 
     if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
         if (endpoint === 'settings' || endpoint === 'users' || endpoint === 'db') {
-            cacheInvalidate = "/*";
+            cacheInvalidate = '/*';
         } else if (endpoint === 'posts') {
-            cacheInvalidate = "/, /page/*, /rss/, /rss/*";
+            cacheInvalidate = '/, /page/*, /rss/, /rss/*, /tag/*';
             if (id && jsonResult.slug) {
                 return config.urlForPost(settings, jsonResult).then(function (postUrl) {
                     return cacheInvalidate + ', ' + postUrl;
@@ -61,7 +60,7 @@ requestHandler = function (apiMethod) {
                 }
             });
         }, function (error) {
-            var errorCode = error.errorCode || 500,
+            var errorCode = error.code || 500,
                 errorMsg = {error: _.isString(error) ? error : (_.isObject(error) ? error.message : 'Unknown API Error')};
             res.json(errorCode, errorMsg);
         });

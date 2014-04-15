@@ -7,12 +7,20 @@ var path          = require('path'),
     when          = require('when'),
     url           = require('url'),
     _             = require('lodash'),
-    requireTree   = require('../require-tree'),
+    requireTree   = require('../require-tree').readAll,
     theme         = require('./theme'),
     configUrl     = require('./url'),
     ghostConfig   = {},
     appRoot       = path.resolve(__dirname, '../../../'),
     corePath      = path.resolve(appRoot, 'core/');
+
+// Are we using sockets? Custom socket or the default?
+function getSocket() {
+    if (ghostConfig.server.hasOwnProperty('socket')) {
+        return _.isString(ghostConfig.server.socket) ? ghostConfig.server.socket : path.join(ghostConfig.paths.contentPath, process.env.NODE_ENV + '.socket');
+    }
+    return false;
+}
 
 function updateConfig(config) {
     var localPath,
@@ -100,7 +108,7 @@ function config() {
     if (_.isEmpty(ghostConfig)) {
         try {
             ghostConfig = require(path.resolve(__dirname, '../../../', 'config.js'))[process.env.NODE_ENV] || {};
-        } catch (ignore) {/*jslint sloppy: true */}
+        } catch (ignore) {/*jslint strict: true */}
         ghostConfig = updateConfig(ghostConfig);
     }
 
@@ -110,5 +118,6 @@ function config() {
 module.exports = config;
 module.exports.init = initConfig;
 module.exports.theme = theme;
+module.exports.getSocket = getSocket;
 module.exports.urlFor = configUrl.urlFor;
 module.exports.urlForPost = configUrl.urlForPost;

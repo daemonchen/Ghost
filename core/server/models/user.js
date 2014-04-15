@@ -1,5 +1,4 @@
 var _              = require('lodash'),
-    uuid           = require('node-uuid'),
     when           = require('when'),
     errors         = require('../errorHandling'),
     nodefn         = require('when/node/function'),
@@ -10,6 +9,7 @@ var _              = require('lodash'),
     Permission     = require('./permission').Permission,
     http           = require('http'),
     crypto         = require('crypto'),
+    validator      = require('validator'),
 
     tokenSecurity  = {},
     User,
@@ -17,11 +17,12 @@ var _              = require('lodash'),
 
 function validatePasswordLength(password) {
     try {
-        ghostBookshelf.validator.check(password, "Your password must be at least 8 characters long.").len(8);
+        if (!validator.isLength(password, 8)) {
+            throw new Error('Your password must be at least 8 characters long.');
+        }
     } catch (error) {
         return when.reject(error);
     }
-
     return when.resolve();
 }
 
@@ -37,17 +38,9 @@ User = ghostBookshelf.Model.extend({
 
     tableName: 'users',
 
-    validate: function () {
-        ghostBookshelf.validator.check(this.get('email'), "Please enter a valid email address. That one looks a bit dodgy.").isEmail();
-        ghostBookshelf.validator.check(this.get('bio'), "We're not writing a novel here! I'm afraid your bio has to stay under 200 characters.").len(0, 200);
-        if (this.get('website') && this.get('website').length > 0) {
-            ghostBookshelf.validator.check(this.get('website'), "Looks like your website is not actually a website. Try again?").isUrl();
-        }
-        ghostBookshelf.validator.check(this.get('location'), 'This seems a little too long! Please try and keep your location under 150 characters.').len(0, 150);
-        return true;
-    },
+    saving: function (newPage, attr, options) {
+          /*jshint unused:false*/
 
-    saving: function () {
         var self = this;
         // disabling sanitization until we can implement a better version
         // this.set('name', this.sanitize('name'));
@@ -58,14 +51,14 @@ User = ghostBookshelf.Model.extend({
 
         ghostBookshelf.Model.prototype.saving.apply(this, arguments);
 
-        if (!this.get('slug')) {
+        if (this.hasChanged('slug') || !this.get('slug')) {
             // Generating a slug requires a db call to look for conflicting slugs
-            return ghostBookshelf.Model.generateSlug(User, this.get('name'))
+            return ghostBookshelf.Model.generateSlug(User, this.get('slug') || this.get('name'),
+                {transacting: options.transacting})
                 .then(function (slug) {
                     self.set({slug: slug});
                 });
         }
-
     },
 
     posts: function () {
@@ -122,7 +115,7 @@ User = ghostBookshelf.Model.extend({
             // Add this user to the admin role (assumes admin = role_id: 1)
             return userData.roles().attach(1);
         }).then(function (addedUserRole) {
-            /*jslint unparam:true*/
+            /*jshint unused:false*/
             // Return the added user as expected
 
             return when.resolve(userData);
@@ -184,7 +177,7 @@ User = ghostBookshelf.Model.extend({
                         });
                     }
 
-                    return when(user.set('status', 'active').save()).then(function (user) {
+                    return when(user.set({status : 'active', last_login : new Date()}).save()).then(function (user) {
                         return user;
                     });
                 }, errors.logAndThrowError);

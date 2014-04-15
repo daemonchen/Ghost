@@ -1,13 +1,13 @@
 /*globals describe, before, beforeEach, afterEach, it */
-var testUtils = require('../../utils'),
-    should = require('should'),
-    _ = require('lodash'),
-    when = require('when'),
-    sequence = require('when/sequence'),
+var testUtils     = require('../../utils'),
+    should        = require('should'),
+    _             = require('lodash'),
+    when          = require('when'),
+    sequence      = require('when/sequence'),
 
     // Stuff we are testing
     DataGenerator = require('../../utils/fixtures/data-generator'),
-    Models = require('../../../server/models');
+    Models        = require('../../../server/models');
 
 describe('Post Model', function () {
 
@@ -419,7 +419,7 @@ describe('Post Model', function () {
         }).then(function (paginationResult) {
             paginationResult.page.should.equal(2);
             paginationResult.limit.should.equal(15);
-            paginationResult.posts.length.should.equal(9);
+            paginationResult.posts.length.should.equal(11);
             paginationResult.pages.should.equal(2);
             paginationResult.aspect.tag.name.should.equal('injection');
             paginationResult.aspect.tag.slug.should.equal('injection');
